@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Only needed for PULL mode (Odoo reaches the weighbridge). In PUSH mode (default) the weighbridge calls Odoo and these stay empty. -->
+    <record id="param_wb_api_url" model="ir.config_parameter">
+        <field name="key">wb.api_url</field>
+        <field name="value"></field>
+    </record>
+    <record id="param_wb_api_token" model="ir.config_parameter">
+        <field name="key">wb.api_token</field>
+        <field name="value"></field>
+    </record>
+    <record id="param_wb_api_tz" model="ir.config_parameter">
+        <field name="key">wb.api_tz</field>
+        <field name="value">Asia/Kolkata</field>
+    </record>
+</odoo>

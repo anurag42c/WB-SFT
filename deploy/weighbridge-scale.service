@@ -1,0 +1,17 @@
+[Unit]
+Description=Weighbridge scale readers (one per enabled scale, serial/TCP -> SQLite)
+After=network.target
+
+[Service]
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/www/weighbridge/data
+User=www-data
+Group=dialout
+WorkingDirectory=/var/www/weighbridge
+ExecStart=/usr/bin/php /var/www/weighbridge/bin/scale_supervisor.php
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
