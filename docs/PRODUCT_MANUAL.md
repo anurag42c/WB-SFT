@@ -1,6 +1,6 @@
 # Weighbridge Management System — Product Manual
 
-**Version 1.2.0** &nbsp;·&nbsp; Truck weighing, gate entry, plate recognition, invoice OCR with weighbridge matching, and SAP / Oracle integration
+**Version 1.3.0** &nbsp;·&nbsp; Truck weighing, gate entry, plate recognition, invoice OCR with weighbridge matching, and SAP / Oracle integration
 
 | | |
 |---|---|
@@ -30,7 +30,8 @@
 15. Security
 16. Troubleshooting
 17. Odoo integration and the REST API
-18. Appendices (settings, database, formats, checklists, SAP data contract, exception catalogue, glossary)
+18. Gate entry ⇄ weighbridge, outside slips and truck analytics
+19. Appendices (settings, database, formats, checklists, SAP data contract, exception catalogue, glossary)
 
 ---
 
@@ -918,7 +919,66 @@ If Odoo can reach the weighbridge server: in Odoo set the *System Parameters* `w
 
 The push client, the PO and master pulls, store-and-forward and the whole REST API are covered by the automated tests against a **simulated Odoo JSON-RPC server** and a running copy of the API (about 65 checks). The Odoo addon was checked for syntax only; it has **not been installed in a live Odoo** here. Install it on an Odoo test database first, run *Test Odoo connection*, close one ticket on a test weighbridge and confirm the record appears, before using it for real. Receiving goods or creating invoices in Odoo from a ticket is not automatic – the tickets are linked to purchase orders so that your Odoo team can build the receipt / bill process they want on top.
 
-# 18. Appendices
+# 18. Gate entry ⇄ weighbridge, outside slips and truck analytics
+
+Data now flows **both ways** between the gate register and the factory weighbridge, trucks weighed **on another weighbridge** can be brought in at the gate, and the *Analytics* screen reports trucks in and out **by product category**.
+
+## 18.1 Gate → weighbridge (what the guard types is not typed again)
+
+When the weighbridge operator creates a ticket for a vehicle that is registered inside, the ticket takes over what the guard entered: **party, material, challan / PO number and driver** (whatever the operator leaves empty). The **Direction** box has a new first choice, **Auto (from gate entry)**: a *Delivery* entry gives an inward ticket, a *Dispatch* entry an outward one. An explicit choice always wins.
+
+## 18.2 Weighbridge → gate (the guard sees the result)
+
+As soon as a ticket is created for the vehicle, its **gate entry shows the ticket number and state**, and when the second weighing is done the **net weight** (*Gate* screen, *Vehicles inside*, and the gate pass). If the guard left party / material / challan empty, the weighbridge values are copied into the entry. Cancelling the ticket clears this again. The exit rule (*Setup → Gates*) is satisfied by either a factory ticket or an outside slip.
+
+## 18.3 Outside weighbridge slips
+
+![Gate screen with the outside slip form](screenshots/24-gate-outside-slip.png)
+
+Use this when the truck was weighed elsewhere (supplier's or a public weighbridge) and brings the printed slip.
+
+1. *Gate → Outside weighbridge slip.* Choose the vehicle from the list of vehicles inside, or type the number if it has not been registered yet (it is registered on the spot; a **blocked** vehicle is refused).
+2. Enter the **name of the outside weighbridge**, the **slip number**, **gross and tare** (or one of them and the net), optionally the date/time on the slip, party, material, challan, direction. Press **Record slip**.
+3. The program creates a **completed ticket** (shown as source *outside*, remark *OUTSIDE WEIGHBRIDGE: name slip no*) linked to the gate entry. From then on it behaves like any ticket: reports, invoice matching (chapter 13), transfer to Oracle / Odoo (chapters 9, 17), analytics.
+
+Rules: the same slip (weighbridge name + slip number) cannot be entered twice – a second attempt just shows the first ticket; gross must exceed tare; a net that does not equal gross − tare is refused; weights above 200 t, or a slip time in the future, are refused.
+
+**Outside slip vs the factory weighbridge.** If the truck is also weighed on your weighbridge, both tickets stay linked to the gate entry and the two net weights are compared. A difference larger than the allowed **percentage or kg (the larger of the two counts; Setup → Gates, default 1 % / 50 kg)** is shown in red on the gate screen and the gate pass and is listed on the *Analytics* screen. It does not block anything – it tells you who to call.
+
+## 18.4 Pushing slips from another system (API)
+
+An outside system – the supplier's portal, a spreadsheet macro, an integration tool – can send slips without anyone typing them (chapter 17 explains the token and *Allow API writes*):
+
+```
+POST /api/v1/external_slips.php        Authorization: Bearer <token>
+{"vehicle_no":"MH31AB1234","weighbridge":"Shiv Dharam Kanta","slip_no":"A-5521",
+ "gross_kg":38400,"tare_kg":14200,"weighed_at":"2026-10-13 09:40:00",
+ "party":"Shree Balaji","material":"Iron Ore","direction":"INWARD","challan_no":"CH-77"}
+```
+
+The answer contains the ticket number and entry number. Posting the same slip again is harmless (`"duplicate": true`). Up to 100 slips can be sent as `{"slips":[…]}`; each gets its own result. The gate register can be read with `GET /api/v1/gate_entries.php` (including the factory ticket result and the slip difference) and a vehicle can be registered with `POST /api/v1/gate_entries.php`. Tickets from the API carry `source` (`LOCAL` or `EXTERNAL`).
+
+## 18.5 Product categories
+
+![Analytics](screenshots/23-analytics.png)
+
+Analytics groups loads by the **category of the material**. Set categories in *Masters → Materials* (*Product category* column – administrators; examples: Raw material, Fuel, Finished goods, Packing). A material without category is shown as **Uncategorised**; material names are matched ignoring upper/lower case. If you use Odoo and *fetch vendors/customers and products* is on, each product's Odoo category (last part of its path, e.g. *All / Raw Materials* → *Raw Materials*) is filled in – only where you have not set one yourself.
+
+## 18.6 The Analytics screen
+
+*Analytics* (menu) shows, for a date range, a product category and – if wanted – only factory tickets or only outside slips:
+
+* **Cards:** trucks in, trucks out, balance (in − out) in tonnes, trucks from outside weighbridges, number of slip differences.
+* **By product category:** bars and a table with trucks and tonnes in and out, balance, average tonnes per truck, and how many came from outside weighbridges. Click a category to look at it alone. *CSV* exports the table.
+* **Trucks per day** (every day of the range, also empty days), **top materials**, the **gate register** (entries, exits, still inside and the **average time on site** per category) and the list of **outside slip ≠ factory** differences.
+
+A *truck* here is one completed ticket (one load); cancelled tickets are not counted; the date is that of the second weighing (of the slip for outside tickets). The same figures are available to other systems as `GET /api/v1/analytics.php?from=…&to=…&category=…`.
+
+## 18.7 What has been tested
+
+Automatic tests cover the data flow in both directions, outside slips (valid, duplicate, wrong figures, blocked vehicle, tolerance), the transfer of such tickets to Odoo, the analytics figures (categories, in/out, balance, averages, days, filters, time on site) and the new API endpoints (about 75 checks); the screens were also driven in a real browser (Chromium) with 190+ loads. The screen was not tried with real weighing slips or real hardware.
+
+# 19. Appendices
 
 ## Appendix A — Settings reference
 
@@ -950,6 +1010,7 @@ The push client, the PO and master pulls, store-and-forward and the whole REST A
 | Odoo on/off, URL, database, login, API key, model, timeout, batch | Odoo & API | off; —; —; —; —; `wb.ticket`; 20 s; 50 |
 | Fetch Odoo purchase orders / vendors & products | Odoo & API | off / off |
 | REST API token / allow API writes | Odoo & API | none / off |
+| Outside slip tolerance (percent / kg) | Gates | 1 % / 50 kg |
 
 ## Appendix B — Oracle table `WEIGHBRIDGE_TICKETS`
 
@@ -1037,6 +1098,10 @@ These are only **examples of the kind of line** indicators send. Always check yo
 | 27 | Odoo (if used): addon installed on a test database; *Test Odoo connection* says Connected OK; a closed ticket appears in *Weighbridge → Tickets* with the right weights and times | ☐ |
 | 28 | Odoo switched off for a while: weighing continues, tickets show PENDING/FAILED and arrive after it returns, without duplicates; a cancelled ticket updates the same record | ☐ |
 | 29 | REST API: token generated, `ping.php` answers, a wrong token is refused, `tickets.php` returns the new ticket; writes stay refused until *Allow API writes* is ticked | ☐ |
+| 30 | Gate entry with party/material typed → weighbridge ticket takes them over; after the second weighing the gate entry shows the net weight | ☐ |
+| 31 | Outside weighbridge slip entered at the gate becomes a completed ticket; the same slip twice is refused/ignored; the vehicle can exit; the slip shows in the report | ☐ |
+| 32 | Slip vs factory weighing: a difference above the tolerance is shown in red and on the Analytics screen | ☐ |
+| 33 | Materials have product categories; Analytics shows trucks and tonnes in/out per category, the daily chart and the CSV match a hand count for one day | ☐ |
 
 ## Appendix E — Main database tables (SQLite)
 

@@ -17,6 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $r = GateEntries::exit((int)$_POST['id'], (int)($_POST['gate_id'] ?? 0), !empty($_POST['open_gate']), $ov);
                 flash('Exit recorded.' . ($r['gate'] ? ' ' . $r['gate']['message'] : ''), ($r['gate'] && !$r['gate']['ok']) ? 'err' : 'ok');
                 break;
+            case 'extslip':
+                $r = GateEntries::externalSlip($_POST, ($_POST['entry_id'] ?? '') !== '' ? (int)$_POST['entry_id'] : null, $ov);
+                flash($r['duplicate'] ? "That slip was already entered: ticket {$r['ticket_no']} (entry {$r['entry_no']})."
+                    : "Outside slip recorded: ticket {$r['ticket_no']}, net " . number_format($r['net_kg']) . " kg, entry {$r['entry_no']}.", $r['duplicate'] ? 'err' : 'ok');
+                break;
             case 'cancel':
                 Auth::require(true); GateEntries::cancel((int)$_POST['id'], trim($_POST['reason'] ?? '') ?: 'no reason'); flash('Entry cancelled.');
                 break;
@@ -67,6 +72,17 @@ page_head('Gate');
   </div>
 
   <div>
+    <div class="card"><h2>Outside weighbridge slip</h2>
+      <p class="hint">The truck was weighed on another weighbridge (supplier's, public). Enter the slip here: it becomes a completed ticket (shown as <b>outside</b>) linked to the vehicle's gate entry, and is included in reports, invoice matching, analytics and the transfer to Oracle / Odoo. If the vehicle is not registered yet it is registered now.</p>
+      <form method="post" autocomplete="off"><?= csrf_field() ?><input type="hidden" name="do" value="extslip">
+        <label>Vehicle</label><select name="entry_id"><option value="">New / not registered yet (type below)</option><?php foreach ($inside as $e) echo '<option value="' . (int)$e['id'] . '">' . e($e['vehicle_no'] . ' - ' . $e['entry_no']) . '</option>'; ?></select>
+        <div class="row"><div><label>Vehicle no (if not in the list)</label><input name="vehicle_no" style="text-transform:uppercase" list="dl_veh"></div><div><label>Direction</label><select name="direction"><option value="">Auto (gate purpose / inward)</option><option value="INWARD">Inward (material in)</option><option value="OUTWARD">Outward (material out)</option></select></div></div>
+        <div class="row"><div><label>Outside weighbridge *</label><input name="weighbridge" required placeholder="e.g. Shiv Dharam Kanta"></div><div><label>Slip no *</label><input name="slip_no" required></div></div>
+        <div class="row"><div><label>Gross kg</label><input name="gross_kg" type="number" step="0.01" min="0"></div><div><label>Tare kg</label><input name="tare_kg" type="number" step="0.01" min="0"></div><div><label>Net kg (optional)</label><input name="net_kg" type="number" step="0.01" min="0"></div></div>
+        <div class="row"><div><label>Weighed on (optional)</label><input name="weighed_at" type="datetime-local"></div><div><label>Challan / PO no</label><input name="challan_no"></div></div>
+        <div class="row"><div><label>Party</label><input name="party" list="dl_party"></div><div><label>Material</label><input name="material" list="dl_mat"></div></div>
+        <p><?= $override ?> <button>Record slip</button></p>
+      </form></div>
     <div class="card"><h2>Vehicles inside (<?= count($inside) ?>)</h2>
       <?php if (!$inside): ?><p class="hint">None.</p><?php else: ?>
       <table><tr><th>Entry</th><th>Vehicle</th><th>In</th><th>Weighing</th><th></th></tr>
@@ -74,7 +90,9 @@ page_head('Gate');
         <tr><td><a href="gate_pass.php?id=<?= (int)$e['id'] ?>"><?= e($e['entry_no']) ?></a><div class="hint"><?= e($e['party']) ?> <?= e($e['material']) ?></div></td>
           <td><?= e($e['vehicle_no']) ?><?php if ($e['plate_flag'] === 'MISMATCH'): ?> <span class="badge bad">PLATE</span><?php endif; ?></td>
           <td><?= e(substr($e['in_at'], 11, 5)) ?></td>
-          <td><?= $e['tstatus'] === 'CLOSED' ? '<span class="badge ok">done</span>' : ($e['tstatus'] === 'OPEN' ? '<span class="badge warn">1st done</span>' : '<span class="badge">not yet</span>') ?></td>
+          <td><?= $e['tstatus'] === 'CLOSED' ? '<span class="badge ok">done</span>' : ($e['tstatus'] === 'OPEN' ? '<span class="badge warn">1st done</span>' : '<span class="badge">not yet</span>') ?>
+            <?php if ($e['wb_net_kg'] !== null): ?><div class="hint">factory <?= number_format((float)$e['wb_net_kg']) ?> kg</div><?php endif; ?>
+            <?php if ($e['ext_net_kg'] !== null): ?><div class="hint">slip <?= e($e['ext_wb_name']) ?>: <?= number_format((float)$e['ext_net_kg']) ?> kg <?php $v = GateEntries::variance($e); if ($v) echo $v['ok'] ? '<span class="badge ok">match</span>' : '<span class="badge bad">' . ($v['diff_kg'] > 0 ? '+' : '') . number_format($v['diff_kg']) . ' kg</span>'; ?></div><?php endif; ?></td>
           <td><form method="post" class="exitform"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$e['id'] ?>"><input type="hidden" name="open_gate" value="1">
             <select name="gate_id"><?php foreach ($exitGates as $g) echo '<option value="' . (int)$g['id'] . '">' . e($g['name']) . '</option>'; ?><option value="0">(no gate)</option></select>
             <?= $override ?><div style="display:flex;gap:6px"><button name="do" value="exit">Exit &amp; open</button>

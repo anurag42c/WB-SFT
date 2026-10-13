@@ -140,6 +140,18 @@ SQL);
             if (!in_array($c, $cols, true)) { self::pdo()->exec("ALTER TABLE weighments ADD COLUMN $c $t"); }
         }
         self::pdo()->exec('CREATE INDEX IF NOT EXISTS ix_w_odoo ON weighments(odoo_status)');
+        // schema 7: outside-weighbridge slips, gate <-> weighbridge write-back, material categories
+        foreach (['source' => "TEXT NOT NULL DEFAULT 'LOCAL'", 'ext_slip_no' => 'TEXT', 'ext_wb_name' => 'TEXT'] as $c => $t) {
+            if (!in_array($c, $cols, true)) { self::pdo()->exec("ALTER TABLE weighments ADD COLUMN $c $t"); }
+        }
+        self::pdo()->exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_w_ext ON weighments(ext_wb_name, ext_slip_no) WHERE ext_slip_no IS NOT NULL');
+        $gc = array_column(self::all('PRAGMA table_info(gate_entries)'), 'name');
+        foreach (['ext_slip_no' => 'TEXT', 'ext_wb_name' => 'TEXT', 'ext_gross_kg' => 'REAL', 'ext_tare_kg' => 'REAL', 'ext_net_kg' => 'REAL', 'ext_at' => 'TEXT',
+                  'wb_ticket_no' => 'TEXT', 'wb_status' => 'TEXT', 'wb_net_kg' => 'REAL'] as $c => $t) {
+            if (!in_array($c, $gc, true)) { self::pdo()->exec("ALTER TABLE gate_entries ADD COLUMN $c $t"); }
+        }
+        $mc = array_column(self::all('PRAGMA table_info(materials)'), 'name');
+        if (!in_array('category', $mc, true)) { self::pdo()->exec('ALTER TABLE materials ADD COLUMN category TEXT'); }
         Scales::ensureDefault();   // v1 -> v3: the single scale becomes "Scale 1" keeping its settings
     }
 

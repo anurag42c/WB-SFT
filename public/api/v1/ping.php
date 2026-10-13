@@ -3,4 +3,4 @@
 require_once __DIR__ . '/../../../src/bootstrap.php';
 Api::begin();
 Api::out(['ok' => true, 'app' => 'weighbridge', 'version' => WB_VERSION, 'api' => Api::VERSION, 'writes_enabled' => Settings::get('api_write') === '1', 'time' => date('c'),
-    'endpoints' => ['tickets', 'documents', 'purchase_orders', 'masters', 'ping']]);
+    'endpoints' => ['tickets', 'documents', 'purchase_orders', 'masters', 'gate_entries', 'external_slips', 'analytics', 'ping']]);

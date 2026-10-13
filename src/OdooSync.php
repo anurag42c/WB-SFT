@@ -178,10 +178,17 @@ final class OdooSync
     public function pullMasters(int $limit = 5000): array
     {
         $p = $this->call('res.partner', 'search_read', [['|', ['supplier_rank', '>', 0], ['customer_rank', '>', 0]]], ['fields' => ['name'], 'limit' => $limit]);
-        $m = $this->call('product.product', 'search_read', [[['active', '=', true]]], ['fields' => ['name'], 'limit' => $limit]);
+        $m = $this->call('product.product', 'search_read', [[['active', '=', true]]], ['fields' => ['name', 'categ_id'], 'limit' => $limit]);
         $np = $nm = 0;
         foreach ((array)$p as $r) { $n = trim((string)($r['name'] ?? '')); if ($n !== '') { $np += Db::q('INSERT OR IGNORE INTO parties(name) VALUES (?)', [$n])->rowCount(); } }
-        foreach ((array)$m as $r) { $n = trim((string)($r['name'] ?? '')); if ($n !== '') { $nm += Db::q('INSERT OR IGNORE INTO materials(name) VALUES (?)', [$n])->rowCount(); } }
+        foreach ((array)$m as $r) {
+            $n = trim((string)($r['name'] ?? ''));
+            if ($n === '') { continue; }
+            $parts = is_array($r['categ_id'] ?? null) ? preg_split('#\s*/\s*#', (string)$r['categ_id'][1]) : [];
+            $cat = $parts ? trim((string)end($parts)) : '';   // "All / Raw Materials" -> "Raw Materials"
+            $nm += Db::q('INSERT OR IGNORE INTO materials(name, category) VALUES (?, ?)', [$n, $cat !== '' ? $cat : null])->rowCount();
+            if ($cat !== '') { Db::q("UPDATE materials SET category = ? WHERE name = ? AND TRIM(COALESCE(category, '')) = ''", [$cat, $n]); }   // a category set here is never overwritten
+        }
         Db::audit('odoo_master_pull', "$np parties, $nm materials");
         return ['parties' => $np, 'materials' => $nm];
     }

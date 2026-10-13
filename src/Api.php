@@ -57,6 +57,7 @@ final class Api
             'net_kg' => $w['net_kg'] !== null ? (float)$w['net_kg'] : null, 'first_at' => $w['first_at'], 'second_at' => $w['second_at'],
             'scale' => $w['scale_id'] ? (Scales::find((int)$w['scale_id'])['name'] ?? null) : null,
             'plate_in' => $w['plate_in'], 'plate_out' => $w['plate_out'], 'plate_flag' => $w['plate_flag'],
+            'source' => $w['source'] ?? 'LOCAL', 'ext_weighbridge' => $w['ext_wb_name'] ?? null, 'ext_slip_no' => $w['ext_slip_no'] ?? null,
             'operator' => $w['operator'], 'odoo_id' => $w['odoo_id'] !== null ? (int)$w['odoo_id'] : null,
         ];
     }

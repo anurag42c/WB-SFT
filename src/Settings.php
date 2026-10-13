@@ -35,6 +35,7 @@ final class Settings
         'anpr_auto' => '0',
         // Gate entry
         'gate_require_entry' => 'off',  // off | warn | block : weighing needs a gate entry (vehicle inside)
+        'ext_tol_pct' => '1', 'ext_tol_kg' => '50',   // outside slip vs factory weighbridge: allowed difference (larger of the two)
         'gate_exit_policy' => 'warn',   // off | warn | block : exit needs completed weighment, no open ticket
         // Invoice / material-return documents (OCR, matching, transfer)
         'ocr_provider' => 'off',        // off | claude | tesseract

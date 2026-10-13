@@ -209,6 +209,12 @@ The program always keeps its own local SQLite database; Odoo is an add-on connec
 3. Run the sender: `php bin/sync_odoo.php --loop=30` (systemd unit `deploy/weighbridge-odoo-sync.service`, or the NSSM lines in `deploy/windows-install.bat`).
 4. **REST API** for any other system: Setup → *Odoo & API* → *Generate new token*; `GET /api/v1/tickets.php`, `documents.php`, `purchase_orders.php`, `masters.php`, `ping.php`; writes (POST purchase orders / masters) only after ticking *Allow API writes*. Spec: `/api/v1/openapi.php`. Details: manual chapter 17.
 
+## Step 8h – Outside slips and analytics
+
+* **Categories**: Masters → Materials → *Product category* for every material (Raw material, Fuel, Finished goods ...). Odoo products bring their category automatically.
+* **Outside weighbridge slip**: Gate → *Outside weighbridge slip* (or `POST /api/v1/external_slips.php`). It becomes a completed ticket; compare with your own weighing: tolerance in Setup → Gates.
+* **Analytics** (menu): trucks and tonnes in/out per category, per day, gate time on site, slip differences; `GET /api/v1/analytics.php`; CSV. Manual chapter 18.
+
 ## Step 9 – Daily use
 
 1. **Weighing** page: the green display shows live weight and STABLE/MOTION. Buttons enable only when stable.

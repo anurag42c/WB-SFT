@@ -13,7 +13,7 @@ $fields = [
     'docs' => ['ocr_provider', 'ocr_claude_key', 'ocr_claude_model', 'ocr_claude_url', 'ocr_effort', 'ocr_tesseract_cmd', 'doc_max_mb', 'doc_date_order', 'doc_match_days', 'doc_qty_tol_pct',
                'doc_scan_days', 'doc_scan_grace_h', 'doc_targets', 'doc_send_policy', 'ora_doc_table', 'ora_doc_line_table',
                'sap_url', 'sap_auth', 'sap_user', 'sap_pass', 'sap_token', 'sap_client', 'sap_ref_path', 'sap_po_url', 'sap_timeout'],
-    'gates' => ['gate_require_entry', 'gate_exit_policy'],
+    'gates' => ['gate_require_entry', 'gate_exit_policy', 'ext_tol_pct', 'ext_tol_kg'],
     'anpr' => ['anpr_provider', 'anpr_url', 'anpr_key', 'anpr_region', 'anpr_command', 'anpr_min_conf', 'anpr_policy'],
     'oracle' => ['ora_host', 'ora_port', 'ora_service', 'ora_user', 'ora_pass', 'ora_table', 'ora_batch'],
     'odoo' => ['odoo_url', 'odoo_db', 'odoo_user', 'odoo_key', 'odoo_model', 'odoo_timeout', 'odoo_batch'],
@@ -188,6 +188,8 @@ if ($tab === 'scales'): ?>
 <form class="card" method="post"><?= csrf_field() ?><h2>Gate entry rules</h2>
   <label>Weighing requires a gate entry (vehicle registered inside)</label><select name="gate_require_entry"><?= $sel('gate_require_entry', ['off' => 'No', 'warn' => 'Warn (audit only)', 'block' => 'Yes - block; admin can override']) ?></select>
   <label>Exit requires completed weighment and no open ticket</label><select name="gate_exit_policy"><?= $sel('gate_exit_policy', ['off' => 'No', 'warn' => 'Warn (audit + note on the pass)', 'block' => 'Yes - block; admin can override']) ?></select>
+  <label>Outside weighbridge slip vs factory weighbridge: allowed difference</label>
+  <div class="row"><div><?= $in('ext_tol_pct', 'number', 'step="0.1"') ?><div class="hint">percent</div></div><div><?= $in('ext_tol_kg', 'number') ?><div class="hint">or kg (the larger counts)</div></div></div>
   <p><button>Save</button></p></form></div>
 
 <?php elseif ($tab === 'gate'): $gt = Gates::find($sid); ?>

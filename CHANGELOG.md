@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+- **Gate ⇄ weighbridge, both ways**: the ticket takes over party, material, challan, driver and (direction "Auto") the direction from the gate entry; the gate entry shows the factory ticket and its net weight.
+- **Outside weighbridge slips**: enter a slip from another weighbridge at the gate (screen or `POST /api/v1/external_slips.php`, idempotent) - it becomes a completed ticket (source EXTERNAL) that flows into reports, invoice matching, Oracle/Odoo transfer and analytics; comparison with the factory weighing with tolerance and a red flag.
+- **Analytics** screen + `GET /api/v1/analytics.php`: trucks and tonnes in/out by **product category** (new category on materials, also pulled from Odoo), balance, averages, per-day chart, top materials, gate register with time on site, slip differences, CSV.
+- `GET/POST /api/v1/gate_entries.php`; tickets API carries `source`, `ext_weighbridge`, `ext_slip_no`. SQLite schema 7.
+- Manual chapter 18 (appendices are now chapter 19), checklist items 30-33; about 70 new automated checks.
+
 ## 1.2.0
 - **Odoo integration**: closed/cancelled tickets are pushed to Odoo (`wb.ticket`) over the standard JSON-RPC external API with store-and-forward and create-or-update by ticket number; optional pull of confirmed purchase orders (into the PO list used by the invoice checks) and of vendors/customers and products (into the drop-down lists). New setup tab *Odoo & API*, service `bin/sync_odoo.php` (systemd unit + NSSM lines).
 - **Odoo addon** `odoo/wb_weighbridge` (Odoo 17): ticket list/form/pivot/search, partner/product/purchase-order linking, access groups, and a pull job (off by default) for when Odoo can reach the weighbridge.

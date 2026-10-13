@@ -46,7 +46,7 @@ page_head('Weighing');
       <form method="post" autocomplete="off"><?= csrf_field() ?><input type="hidden" name="do" value="create"><input type="hidden" name="scale_id" class="scale_id" value="">
         <div class="row">
           <div><label>Vehicle no *</label><div style="display:flex;gap:6px"><input name="vehicle_no" id="vehicle_no" list="dl_veh" style="text-transform:uppercase"><?php if (Anpr::enabled()): ?><button type="button" id="anpr_btn" class="sec" title="Read plate from camera">&#128247; Read</button><?php endif; ?></div><div class="hint" id="anpr_note"></div></div>
-          <div><label>Direction</label><select name="direction"><option value="INWARD">Inward (receive)</option><option value="OUTWARD">Outward (dispatch)</option></select></div>
+          <div><label>Direction</label><select name="direction"><option value="">Auto (from gate entry)</option><option value="INWARD">Inward (receive)</option><option value="OUTWARD">Outward (dispatch)</option></select></div>
         </div>
         <div class="row">
           <div><label>Party</label><input name="party" list="dl_party"></div>

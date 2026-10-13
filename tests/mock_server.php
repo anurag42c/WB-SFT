@@ -59,7 +59,7 @@ switch ($path) {
                      ['id' => 2, 'order_id' => [7, 'P00007'], 'sequence' => 20, 'partner_id' => [5, 'Shree Balaji Minerals Pvt Ltd'], 'product_id' => [10, 'Coal'], 'name' => 'Coal', 'product_qty' => 15.0, 'product_uom' => [3, 'MT'], 'price_unit' => 900.0, 'date_order' => '2026-09-10 05:00:00'],
                      ['id' => 3, 'order_id' => [8, 'P00008'], 'sequence' => 10, 'partner_id' => [6, 'Other Ltd'], 'product_id' => [10, 'Coal'], 'name' => 'Coal', 'product_qty' => 0.0, 'product_uom' => [3, 'MT'], 'price_unit' => 1.0, 'date_order' => false]]);
             } elseif ($model === 'res.partner' && $m === 'search_read') { $ok([['id' => 5, 'name' => 'Shree Balaji Minerals Pvt Ltd'], ['id' => 11, 'name' => 'Odoo Customer Co']]);
-            } elseif ($model === 'product.product' && $m === 'search_read') { $ok([['id' => 9, 'name' => 'Iron Ore Lumps'], ['id' => 12, 'name' => 'Limestone']]);
+            } elseif ($model === 'product.product' && $m === 'search_read') { $ok([['id' => 9, 'name' => 'Iron Ore Lumps', 'categ_id' => [3, 'All / Raw Materials / Ores']], ['id' => 12, 'name' => 'Limestone', 'categ_id' => [4, 'All / Minerals']]]);
             } else { $fail("Object $model doesn't exist"); }
             file_put_contents($stf, json_encode($st)); break;
         }

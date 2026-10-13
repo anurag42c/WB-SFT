@@ -460,6 +460,7 @@ t('a dead barrier never blocks or undoes the weighing', Db::val('SELECT status F
 
 require __DIR__ . '/docs_tests.php';
 require __DIR__ . '/odoo_tests.php';
+require __DIR__ . '/gate_ext_tests.php';
 
 echo "Oracle (no driver expected in CI)\n";
 $r = OracleSync::syncPending(10);

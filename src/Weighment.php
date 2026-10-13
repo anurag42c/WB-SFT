@@ -110,6 +110,12 @@ final class Weighment
         $firstType = ($in['first_type'] ?? 'GROSS') === 'TARE' ? 'TARE' : 'GROSS';
         $now = date('Y-m-d H:i:s');
         $party = trim((string)($in['party'] ?? '')); $mat = trim((string)($in['material'] ?? ''));
+        // gate -> weighbridge: what the guard typed at the gate fills the blanks (and sets the direction when left on "Auto")
+        $in['driver'] = trim((string)($in['driver'] ?? '')) ?: ($entry['driver'] ?? '');
+        $in['challan_no'] = trim((string)($in['challan_no'] ?? '')) ?: ($entry['challan_no'] ?? '');
+        if ($party === '') { $party = (string)($entry['party'] ?? ''); }
+        if ($mat === '') { $mat = (string)($entry['material'] ?? ''); }
+        $dir = in_array($in['direction'] ?? '', ['INWARD', 'OUTWARD'], true) ? $in['direction'] : (GateEntries::directionFor($entry) ?? 'INWARD');
 
         $pdo = Db::pdo(); $pdo->exec('BEGIN IMMEDIATE');   // serialise ticket-number allocation
         try {
@@ -117,7 +123,7 @@ final class Weighment
             $img = $g['bytes'] !== null ? Camera::save($ticket, 'in', $g['bytes']) : null;
             Db::q('INSERT INTO weighments(ticket_no, vehicle_no, party, material, direction, driver, challan_no, remarks, first_type, first_kg, first_at, first_manual,
                    operator, created_at, scale_id, first_img, plate_in, plate_in_conf, plate_flag, gate_entry_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
-                $ticket, $veh, $party, $mat, ($in['direction'] ?? 'INWARD') === 'OUTWARD' ? 'OUTWARD' : 'INWARD',
+                $ticket, $veh, $party, $mat, $dir,
                 trim((string)($in['driver'] ?? '')), trim((string)($in['challan_no'] ?? '')), trim((string)($in['remarks'] ?? '')),
                 $useStored ? 'GROSS' : $firstType, $kg, $now, $man, Auth::user()['username'] ?? 'system', $now,
                 $scaleId, $img, $g['plate'], $g['conf'], $g['flag'], $entry['id'] ?? null]);
@@ -125,6 +131,7 @@ final class Weighment
             self::remember('vehicles', $veh); self::remember('parties', $party); self::remember('materials', $mat);
             if ($useStored) { self::finish($id, (float)$stored, 'STORED TARE', 0, $now); }
             Db::audit('ticket_create', $ticket);
+            GateEntries::refreshFromTickets($entry['id'] ?? null);
             $pdo->exec('COMMIT');
         } catch (Throwable $e) { if ($pdo->inTransaction()) { $pdo->exec('ROLLBACK'); } throw $e; }
         if ($useStored) { try { Gates::onTicketClosed($scaleId, $ticket); } catch (Throwable) {} }   // single-pass ticket is complete now
@@ -171,6 +178,7 @@ final class Weighment
         Db::q("UPDATE weighments SET second_kg=?, second_at=?, second_manual=?, gross_kg=?, tare_kg=?, net_kg=?, status='CLOSED', sync_status=?, odoo_status=?,
                remarks = CASE WHEN ? IS NULL THEN remarks ELSE TRIM(COALESCE(remarks,'') || ' [' || ? || ']') END WHERE id=?",
             [$kg, $now, $manual, $gross, $tare, $gross - $tare, $sync, $odoo, $note, $note, $id]);
+        GateEntries::refreshFromTickets($w['gate_entry_id'] !== null ? (int)$w['gate_entry_id'] : null);
         if ($w['first_type'] === 'TARE' || $note === null) {   // learn the vehicle's tare for next time
             Db::q('UPDATE vehicles SET tare_kg = ? WHERE reg_no = ? AND (tare_kg IS NULL)', [$tare, $w['vehicle_no']]);
         }
@@ -183,6 +191,7 @@ final class Weighment
                sync_status = CASE WHEN sync_status IN ('SYNCED','PENDING','FAILED') AND gross_kg IS NOT NULL THEN 'PENDING' ELSE 'NA' END,
                odoo_status = CASE WHEN odoo_status IN ('SYNCED','PENDING','FAILED') AND gross_kg IS NOT NULL THEN 'PENDING' ELSE 'NA' END,
                status='CANCELLED' WHERE id=? AND status<>'CANCELLED'", [$reason, $id]);
+        GateEntries::refreshFromTickets(($ge = Db::val('SELECT gate_entry_id FROM weighments WHERE id = ?', [$id])) !== null ? (int)$ge : null);
         Db::audit('ticket_cancel', "$id $reason");
     }
 }
