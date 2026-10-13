@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_wb_ticket_tree" model="ir.ui.view">
+        <field name="name">wb.ticket.tree</field>
+        <field name="model">wb.ticket</field>
+        <field name="arch" type="xml">
+            <tree decoration-muted="state == 'CANCELLED'" decoration-warning="plate_flag == 'MISMATCH'">
+                <field name="ticket_no"/>
+                <field name="first_weight_at"/>
+                <field name="vehicle_no"/>
+                <field name="direction"/>
+                <field name="partner_id" optional="show"/>
+                <field name="party_name" optional="hide"/>
+                <field name="product_id" optional="show"/>
+                <field name="material_name" optional="hide"/>
+                <field name="gross_kg" optional="hide"/>
+                <field name="tare_kg" optional="hide"/>
+                <field name="net_kg" sum="Total"/>
+                <field name="purchase_id" optional="show"/>
+                <field name="plate_flag" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'CLOSED'" decoration-danger="state == 'CANCELLED'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_wb_ticket_form" model="ir.ui.view">
+        <field name="name">wb.ticket.form</field>
+        <field name="model">wb.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="OPEN,CLOSED"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="ticket_no" placeholder="Ticket no."/></h1></div>
+                    <group>
+                        <group string="Load">
+                            <field name="vehicle_no"/>
+                            <field name="driver"/>
+                            <field name="direction"/>
+                            <field name="challan_no"/>
+                            <field name="scale_name"/>
+                            <field name="operator"/>
+                        </group>
+                        <group string="Weights (kg)">
+                            <field name="gross_kg"/>
+                            <field name="tare_kg"/>
+                            <field name="net_kg"/>
+                            <field name="net_ton"/>
+                            <field name="first_weight_at"/>
+                            <field name="second_weight_at"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Linked to Odoo">
+                            <field name="party_name"/>
+                            <field name="partner_id"/>
+                            <field name="material_name"/>
+                            <field name="product_id"/>
+                            <field name="po_ref"/>
+                            <field name="purchase_id"/>
+                        </group>
+                        <group string="Plate recognition">
+                            <field name="plate_in"/>
+                            <field name="plate_out"/>
+                            <field name="plate_flag"/>
+                            <field name="local_id"/>
+                        </group>
+                    </group>
+                    <field name="remarks" placeholder="Remarks"/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_ticket_search" model="ir.ui.view">
+        <field name="name">wb.ticket.search</field>
+        <field name="model">wb.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="ticket_no"/>
+                <field name="vehicle_no"/>
+                <field name="party_name"/>
+                <field name="material_name"/>
+                <field name="partner_id"/>
+                <field name="purchase_id"/>
+                <filter name="inward" string="Inward" domain="[('direction', '=', 'INWARD')]"/>
+                <filter name="outward" string="Outward" domain="[('direction', '=', 'OUTWARD')]"/>
+                <filter name="closed" string="Closed" domain="[('state', '=', 'CLOSED')]"/>
+                <filter name="cancelled" string="Cancelled" domain="[('state', '=', 'CANCELLED')]"/>
+                <filter name="unlinked" string="No purchase order" domain="[('direction', '=', 'INWARD'), ('purchase_id', '=', False)]"/>
+                <filter name="plate_bad" string="Plate mismatch" domain="[('plate_flag', '=', 'MISMATCH')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_partner" string="Partner" context="{'group_by': 'partner_id'}"/>
+                    <filter name="g_product" string="Product" context="{'group_by': 'product_id'}"/>
+                    <filter name="g_day" string="Day" context="{'group_by': 'first_weight_at:day'}"/>
+                    <filter name="g_dir" string="Direction" context="{'group_by': 'direction'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wb_ticket" model="ir.actions.act_window">
+        <field name="name">Weighbridge tickets</field>
+        <field name="res_model">wb.ticket</field>
+        <field name="view_mode">tree,form,pivot</field>
+        <field name="context">{'search_default_closed': 1}</field>
+    </record>
+
+    <record id="view_wb_ticket_pivot" model="ir.ui.view">
+        <field name="name">wb.ticket.pivot</field>
+        <field name="model">wb.ticket</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="partner_id" type="row"/>
+                <field name="first_weight_at" interval="month" type="col"/>
+                <field name="net_ton" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_wb_pull_now" model="ir.actions.server">
+        <field name="name">Fetch tickets from the weighbridge now</field>
+        <field name="model_id" ref="model_wb_ticket"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_pull_now()</field>
+    </record>
+
+    <menuitem id="menu_wb_root" name="Weighbridge" sequence="45" groups="group_wb_user"/>
+    <menuitem id="menu_wb_tickets" name="Tickets" parent="menu_wb_root" action="action_wb_ticket" sequence="10"/>
+    <menuitem id="menu_wb_pull" name="Fetch now (pull mode)" parent="menu_wb_root" action="action_wb_pull_now" sequence="90"
+              groups="group_wb_manager"/>
+</odoo>

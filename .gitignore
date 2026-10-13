@@ -1,0 +1,5 @@
+data/*
+!data/.gitkeep
+*.sqlite*
+*.key
+__pycache__/
