@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_wb_user" model="res.groups">
+        <field name="name">Weighbridge / User</field>
+        <field name="category_id" ref="base.module_category_inventory_inventory"/>
+    </record>
+    <record id="group_wb_manager" model="res.groups">
+        <field name="name">Weighbridge / Manager</field>
+        <field name="category_id" ref="base.module_category_inventory_inventory"/>
+        <field name="implied_ids" eval="[(4, ref('group_wb_user'))]"/>
+        <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>

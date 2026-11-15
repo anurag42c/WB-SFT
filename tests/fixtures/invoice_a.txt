@@ -1,0 +1,14 @@
+SHREE BALAJI MINERALS PVT LTD TAX INVOICE
+Plot 22, MIDC Butibori, Nagpur - 441122, Maharashtra
+GSTIN: 27AABCS1234F1Z5 PAN: AABCS1234F
+Invoice No: BM/2026-27/0451 Buyer: Sunrise Steel Pvt Ltd
+Invoice Date: 15-09-2026 Plot 14, MIDC Industrial Area, Nagpur
+PO No: 4500012345 GSTIN: 27AAACS9999K1Z2
+Vehicle No: MH 31 AB 1234 E-Way Bill: 481234567890
+Iron Ore Fines 62% Fe 2601 28.500 4,850.00 138,225.00
+Loading and Handling Charges 9967 28.500 50.00 1,425.00
+Taxable Value 1,39,650.00
+CGST 9% 12,568.50
+SGST 9% 12,568.50
+Grand Total 1,64,787.00
+Amount in words: Rupees One Lakh Sixty Four Thousand Seven Hundred Eighty Seven only. Subject to Nagpur jurisdiction.
