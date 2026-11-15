@@ -4,7 +4,7 @@ Process: (1) the vehicle is recorded at the entry gate, (2) it drives to the wei
 
 ## A. Gate (register only, no hardware)
 1. Log in as **admin** → **Setup → Gates** → *Add a gate*: name `Entry gate` → open it.
-2. **Role:** Entry gate · **Driver:** *Simulator (no hardware)* (this means no barrier is controlled) · **Automatic opening:** off → Save. (Optional: add `Exit gate` the same way with Role *Exit gate*.)
+2. **Role:** Entry gate · **Driver:** *Simulator (no hardware)* (this means no barrier is controlled) · **Automatic opening:** off → Save. **Then press *Enable* in the gates list – a new gate is disabled until you do.** (Optional: add `Exit gate` the same way with Role *Exit gate*.)
 3. Under *Gate entry rules* choose *Warn* (or *Yes – block*) for "Weighing requires a gate entry", and *Warn* for the exit rule.
 4. Daily use: **Gate** screen → vehicle number, driver, party, material, challan → leave *Open the gate* unticked → **Register & admit**. The weighbridge ticket takes over party, material, challan and driver from this entry (no retyping). You may also choose "(no gate – register only)".
 
